@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penampil Web dengan Full Screen dan Header</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        #container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        #urlInput {
+            width: 80%;
+            max-width: 400px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        #loadButton, #fullscreenButton {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        #loadButton:hover, #fullscreenButton:hover {
+            background-color: #0056b3;
+        }
+
+        #iframeContainer {
+            width: 100%;
+            height: 0;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            transition: height 0.3s ease;
+        }
+
+        #myIframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background-color: #d3d3d3; /* Warna abu-abu seperti gambar */
+        }
+
+        /* Stil untuk mode full screen */
+        :fullscreen #myIframe {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        :fullscreen #container, :fullscreen #loadButton, :fullscreen #urlInput, :fullscreen #fullscreenButton {
+            display: none !important;
+        }
+
+        /* Stil untuk header di mode full screen */
+        #fullscreenHeader {
+            display: none;
+            position: fixed;
+            top: 2px;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 20px;
+            z-index: 1000;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        :fullscreen #fullscreenHeader {
+            display: flex; /* Pastikan header muncul saat full screen */
+        }
+
+        /* Stil untuk lingkaran */
+        .circle-button {
+            width: 30px;
+            height: 30px;
+            background-color: black;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 5px;
+            cursor: pointer;
+            color: white;
+            font-size: 16px;
+        }
+
+        .circle-button:hover {
+            background-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <input type="text" id="urlInput" placeholder="Masukkan URL (contoh: https://example.com)">
+        <button id="loadButton">Muat URL</button>
+        <button id="fullscreenButton" style="display:none;">Full Screen</button>
+    </div>
+    <div id="iframeContainer">
+        <iframe id="myIframe" title="Loaded Webpage"></iframe>
+    </div>
+    <header id="fullscreenHeader">
+        <span id="batteryStatus">baterai: 70%</span>
+        <div style="display: flex; align-items: center;">
+            <div class="circle-button" id="refreshButton">↻</div>
+            <div class="circle-button" id="closeButton">✕</div>
+        </div>
+        <span id="currentTime"></span>
+    </header>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const loadButton = document.getElementById('loadButton');
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        const iframe = document.getElementById('myIframe');
+        const iframeContainer = document.getElementById('iframeContainer');
+        const currentTime = document.getElementById('currentTime');
+        const refreshButton = document.getElementById('refreshButton');
+        const closeButton = document.getElementById('closeButton');
+
+        // Fungsi untuk memperbarui jam
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            currentTime.textContent = `jam: ${timeString}`;
+        }
+
+        // Perbarui jam setiap detik
+        setInterval(updateTime, 1000);
+        updateTime(); // Panggil sekali saat memuat halaman
+
+        loadButton.addEventListener('click', () => {
+            const url = urlInput.value;
+            if (url) {
+                let finalUrl = url;
+                if (!url.match(/^https?:\/\//i)) {
+                    finalUrl = 'https://' + url;
+                }
+                iframe.src = finalUrl;
+                iframeContainer.style.height = '80vh';
+                fullscreenButton.style.display = 'inline-block';
+                loadButton.style.display = 'none';
+                urlInput.style.display = 'none';
+            } else {
+                alert('Silakan masukkan URL yang valid!');
+            }
+        });
+
+        fullscreenButton.addEventListener('click', () => {
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } else if (iframe.webkitRequestFullscreen) {
+                iframe.webkitRequestFullscreen();
+            } else if (iframe.msRequestFullscreen) {
+                iframe.msRequestFullscreen();
+            }
+        });
+
+        // Tombol muat ulang
+        refreshButton.addEventListener('click', () => {
+            iframe.src = iframe.src; // Muat ulang iframe
+        });
+
+        // Tombol close (keluar dari full screen)
+        closeButton.addEventListener('click', () => {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        });
+
+        // Periksa status full screen
+        document.addEventListener('fullscreenchange', () => {
+            if (document.fullscreenElement) {
+                console.log('Masuk mode full screen');
+                iframeContainer.style.height = '100vh'; // Pastikan iframe penuh saat full screen
+            } else {
+                console.log('Keluar dari full screen');
+                iframeContainer.style.height = '80vh';
+                loadButton.style.display = 'inline-block';
+                urlInput.style.display = 'block';
+                fullscreenButton.style.display = 'none';
+                container.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
